@@ -53,7 +53,7 @@ function HomePage() {
                 {today}
               </p>
               <h1 className="mt-1 text-3xl font-black tracking-tight text-foreground sm:text-4xl">
-                Chào buổi sáng, Thúy 👋
+                Chào buổi sáng👋
               </h1>
               <p className="mt-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <Sparkles className="h-4 w-4 text-primary" />

@@ -16,5 +16,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </React.StrictMode>,
 )
-// cd C:\Users\Admin\studia-frontend
+// cd C:\Users\Admin\WebStudy\studia-frontend
 // C:\Users\Admin\.bun\bin\bun.exe dev

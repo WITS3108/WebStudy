@@ -14,6 +14,9 @@ import { Route as AiRouteImport } from './routes/ai'
 import { Route as FlashcardsRouteImport } from './routes/flashcards'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TodoRouteImport } from './routes/todo'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
+
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,13 +43,24 @@ const TodoRoute = TodoRouteImport.update({
   path: '/todo',
   getParentRoute: () => rootRouteImport,
 } as any)
-
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/flashcards': typeof FlashcardsRoute
   '/settings': typeof SettingsRoute
   '/todo': typeof TodoRoute
+  '/login': typeof LoginRoute     
+  '/register': typeof RegisterRoute 
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +68,8 @@ export interface FileRoutesByTo {
   '/flashcards': typeof FlashcardsRoute
   '/settings': typeof SettingsRoute
   '/todo': typeof TodoRoute
+  '/login': typeof LoginRoute     // <-- Bổ sung dòng này
+  '/register': typeof RegisterRoute // <-- Bổ sung dòng này
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +78,15 @@ export interface FileRoutesById {
   '/flashcards': typeof FlashcardsRoute
   '/settings': typeof SettingsRoute
   '/todo': typeof TodoRoute
+  '/login': typeof LoginRoute     // <-- Bổ sung dòng này
+  '/register': typeof RegisterRoute // <-- Bổ sung dòng này
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ai' | '/flashcards' | '/settings' | '/todo'
+  fullPaths: '/' | '/ai' | '/flashcards' | '/settings' | '/todo' | '/login' | '/register'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ai' | '/flashcards' | '/settings' | '/todo'
-  id: '__root__' | '/' | '/ai' | '/flashcards' | '/settings' | '/todo'
+  to: '/' | '/ai' | '/flashcards' | '/settings' | '/todo' | '/login' | '/register'
+  id: '__root__' | '/' | '/ai' | '/flashcards' | '/settings' | '/todo' | '/login' | '/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +95,8 @@ export interface RootRouteChildren {
   FlashcardsRoute: typeof FlashcardsRoute
   SettingsRoute: typeof SettingsRoute
   TodoRoute: typeof TodoRoute
+  LoginRoute: typeof LoginRoute       // <-- Bổ sung dòng này
+  RegisterRoute: typeof RegisterRoute // <-- Bổ sung dòng này
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +136,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +159,8 @@ const rootRouteChildren: RootRouteChildren = {
   FlashcardsRoute: FlashcardsRoute,
   SettingsRoute: SettingsRoute,
   TodoRoute: TodoRoute,
+  LoginRoute: LoginRoute,       // <-- Bổ sung dòng này
+  RegisterRoute: RegisterRoute, // <-- Bổ sung dòng này
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

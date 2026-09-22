@@ -38,12 +38,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            <button className="btn-press hidden rounded-full border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 sm:block">
+            {/* Đã đổi từ button sang Link để chuyển sang trang đăng ký */}
+            <Link
+              to="/register"
+              className="btn-press hidden rounded-full border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 sm:block"
+            >
               Đăng ký
-            </button>
-            <button className="btn-press rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary-deep">
+            </Link>
+            {/* Đã đổi từ button sang Link để chuyển sang trang đăng nhập */}
+            <Link
+              to="/login"
+              className="btn-press rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary-deep"
+            >
               Đăng nhập
-            </button>
+            </Link>
           </div>
         </div>
       </header>

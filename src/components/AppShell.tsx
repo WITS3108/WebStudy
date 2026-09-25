@@ -1,9 +1,9 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { Brain, Flame, GraduationCap, Home, Layers, ListTodo, LogOut, Search, Settings, User } from "lucide-react";
+import { Brain, Flame, GraduationCap, Home, Layers, ListTodo, Search, Settings } from "lucide-react";
 
 import { ThemeToggle } from "./ThemeToggle";
-import { useAuth } from "@/hooks/useAuth";
+import { useStudyStats } from "@/hooks/useStudyStats";
 
 const navItems = [
   { to: "/", label: "Trang chủ", icon: Home },
@@ -15,8 +15,7 @@ const navItems = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { stats: studyStats } = useStudyStats();
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,55 +40,20 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            {user ? (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/settings"
-                  title="Tài khoản của bạn"
-                  className="btn-press flex items-center gap-2 rounded-full bg-primary/10 py-1.5 pl-1.5 pr-4 text-sm font-bold text-primary hover:bg-primary/15"
-                >
-                  {user.avatarPath ? (
-                    <img
-                      src={user.avatarPath}
-                      alt={user.username}
-                      className="h-7 w-7 rounded-full border border-primary/20 object-cover"
-                    />
-                  ) : (
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/15 text-primary">
-                      <User className="h-4 w-4" />
-                    </span>
-                  )}
-                  <span className="max-w-[140px] truncate">{user.username}</span>
-                </Link>
-                <button
-                  type="button"
-                  title="Đăng xuất"
-                  aria-label="Đăng xuất"
-                  onClick={async () => {
-                    await logout();
-                    navigate({ to: "/login" });
-                  }}
-                  className="btn-press grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <Link
-                  to="/register"
-                  className="btn-press hidden rounded-full border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 sm:block"
-                >
-                  Đăng ký
-                </Link>
-                <Link
-                  to="/login"
-                  className="btn-press rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary-deep"
-                >
-                  Đăng nhập
-                </Link>
-              </>
-            )}
+            {/* Đã đổi từ button sang Link để chuyển sang trang đăng ký */}
+            <Link
+              to="/register"
+              className="btn-press hidden rounded-full border border-primary/40 px-4 py-2 text-sm font-bold text-primary hover:bg-primary/10 sm:block"
+            >
+              Đăng ký
+            </Link>
+            {/* Đã đổi từ button sang Link để chuyển sang trang đăng nhập */}
+            <Link
+              to="/login"
+              className="btn-press rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary-deep"
+            >
+              Đăng nhập
+            </Link>
           </div>
         </div>
       </header>
@@ -124,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="mt-2 rounded-2xl bg-primary/10 p-3">
             <div className="flex items-center gap-2 text-primary">
               <Flame className="h-4 w-4 animate-pulse" />
-              <span className="text-sm font-black">12</span>
+              <span className="text-sm font-black">{studyStats.streak_days}</span>
               <span className="hidden text-xs font-bold xl:inline">ngày liên tục</span>
             </div>
           </div>

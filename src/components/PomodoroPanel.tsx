@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Coffee, Headphones, Pause, Play, RotateCcw, Timer } from "lucide-react";
+import { getLocalDateString } from "@/hooks/useStudyStats";
 
 const PRESETS = [15, 25, 45];
 const BREAK_MINUTES = 5;
@@ -10,7 +11,11 @@ function format(seconds: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function PomodoroPanel() {
+export function PomodoroPanel({
+  onStudyTimeRecorded,
+}: {
+  onStudyTimeRecorded: (seconds: number, studyDate: string) => Promise<void>;
+}) {
   const [focusMinutes, setFocusMinutes] = useState(25);
   const [mode, setMode] = useState<"focus" | "break">("focus");
   const [remaining, setRemaining] = useState(25 * 60);
@@ -19,6 +24,31 @@ export function PomodoroPanel() {
   const [lofi, setLofi] = useState(false);
 
   const audioRef = useRef<{ ctx: AudioContext; gain: GainNode; nodes: AudioNode[] } | null>(null);
+  const focusStartedAtRef = useRef<number | null>(null);
+
+  const commitFocusTime = useCallback(() => {
+    const startedAt = focusStartedAtRef.current;
+    focusStartedAtRef.current = null;
+    if (startedAt === null) return;
+
+    // Split time across local calendar days if a focus session crosses midnight.
+    let cursor = startedAt;
+    const endedAt = Date.now();
+    while (cursor < endedAt) {
+      const current = new Date(cursor);
+      const nextMidnight = new Date(
+        current.getFullYear(),
+        current.getMonth(),
+        current.getDate() + 1,
+      ).getTime();
+      const segmentEnd = Math.min(endedAt, nextMidnight);
+      const seconds = Math.floor((segmentEnd - cursor) / 1000);
+      if (seconds > 0) {
+        void onStudyTimeRecorded(seconds, getLocalDateString(current));
+      }
+      cursor = segmentEnd;
+    }
+  }, [onStudyTimeRecorded]);
 
   const totalSeconds = (mode === "focus" ? focusMinutes : BREAK_MINUTES) * 60;
   const progress = totalSeconds === 0 ? 0 : 1 - remaining / totalSeconds;
@@ -55,14 +85,18 @@ export function PomodoroPanel() {
     if (!running || remaining > 0) return;
     chime();
     if (mode === "focus") {
+      commitFocusTime();
       setSessions((s) => Math.min(s + 1, 4));
       setMode("break");
       setRemaining(BREAK_MINUTES * 60);
     } else {
+      focusStartedAtRef.current = Date.now();
       setMode("focus");
       setRemaining(focusMinutes * 60);
     }
-  }, [remaining, running, mode, focusMinutes, chime]);
+  }, [remaining, running, mode, focusMinutes, chime, commitFocusTime]);
+
+  useEffect(() => () => commitFocusTime(), [commitFocusTime]);
 
   // Ambient lo-fi pad generated in the browser (no external stream needed).
   useEffect(() => {
@@ -135,15 +169,27 @@ export function PomodoroPanel() {
   const setPreset = (m: number) => {
     setFocusMinutes(m);
     if (mode === "focus") {
+      commitFocusTime();
       setRemaining(m * 60);
       setRunning(false);
     }
   };
 
   const reset = () => {
+    if (mode === "focus") commitFocusTime();
     setRunning(false);
     setMode("focus");
     setRemaining(focusMinutes * 60);
+  };
+
+  const toggleRunning = () => {
+    if (running) {
+      if (mode === "focus") commitFocusTime();
+      setRunning(false);
+      return;
+    }
+    if (mode === "focus") focusStartedAtRef.current = Date.now();
+    setRunning(true);
   };
 
   const R = 78;
@@ -239,7 +285,7 @@ export function PomodoroPanel() {
           Đặt lại
         </button>
         <button
-          onClick={() => setRunning((r) => !r)}
+          onClick={toggleRunning}
           className="btn-press flex flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary-deep"
         >
           {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}

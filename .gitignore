@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environment and cache
+backend/.venv/
+**/__pycache__/
+*.py[cod]
+
+# Local SQLite data
+backend/*.sqlite3
+backend/*.db
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

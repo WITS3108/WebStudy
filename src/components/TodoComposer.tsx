@@ -14,13 +14,18 @@ export function TodoComposer({
   const [tag, setTag] = useState("Học tập");
   const [time, setTime] = useState("08:00");
   const [priority, setPriority] = useState<Todo["priority"]>("vừa");
+  const [error, setError] = useState("");
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         const value = title.trim();
-        if (!value) return;
+        if (!value) {
+          setError("Nhập tên nhiệm vụ trước khi bấm Thêm.");
+          return;
+        }
+        setError("");
         onAdd({ title: value, tag: tag.trim() || "Học tập", time, priority });
         setTitle("");
       }}
@@ -30,8 +35,12 @@ export function TodoComposer({
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
         <input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            if (e.target.value.trim()) setError("");
+          }}
           placeholder="Bạn cần làm gì hôm nay?"
+          maxLength={250}
           className="h-11 w-full rounded-full border border-border bg-background px-4 text-sm font-medium outline-none transition-shadow placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/15"
         />
         <input
@@ -54,6 +63,12 @@ export function TodoComposer({
           Thêm
         </button>
       </div>
+
+      {error && (
+        <p role="alert" className="mt-2 text-sm font-medium text-destructive">
+          {error}
+        </p>
+      )}
 
       <div className="mt-3 flex items-center gap-2">
         <span className="text-xs font-bold text-muted-foreground">Ưu tiên:</span>

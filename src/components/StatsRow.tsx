@@ -1,11 +1,27 @@
 import { CheckCircle2, Clock, Flame } from "lucide-react";
+import { formatStudyTime, type StudyStats } from "@/hooks/useStudyStats";
 
-import { streakDays } from "@/data/mock";
-
-const dayLabels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-
-export function StatsRow({ done, total }: { done: number; total: number }) {
+export function StatsRow({
+  done,
+  total,
+  studyStats,
+}: {
+  done: number;
+  total: number;
+  studyStats: StudyStats;
+}) {
   const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+  const studyGoalPercent = Math.min(
+    100,
+    Math.round((studyStats.today_seconds / studyStats.streak_goal_seconds) * 100),
+  );
+  const week = studyStats.week.length
+    ? studyStats.week
+    : ["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((label) => ({
+        label,
+        studied: false,
+        is_today: false,
+      }));
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -37,18 +53,21 @@ export function StatsRow({ done, total }: { done: number; total: number }) {
           <Flame className="h-4 w-4 text-primary" />
         </div>
         <div className="mt-3 flex items-end gap-2">
-          <span className="text-3xl font-black text-foreground">12</span>
+          <span className="text-3xl font-black text-foreground">{studyStats.streak_days}</span>
           <span className="pb-1 text-xs font-bold text-muted-foreground">ngày liên tục</span>
         </div>
         <div className="mt-4 flex gap-1.5">
-          {streakDays.map((active, i) => (
-            <div key={dayLabels[i]} className="flex flex-1 flex-col items-center gap-1">
+          {week.map((day) => (
+            <div key={day.label} className="flex flex-1 flex-col items-center gap-1">
               <span
+                title={day.studied ? "Đã đạt mốc học trong ngày" : "Chưa đạt mốc học trong ngày"}
                 className={`h-7 w-full rounded-lg transition-colors ${
-                  active ? "bg-primary" : "bg-muted"
+                  day.studied ? "bg-primary" : "bg-muted"
                 }`}
               />
-              <span className="text-[10px] font-bold text-muted-foreground">{dayLabels[i]}</span>
+              <span className={`text-[10px] font-bold ${day.is_today ? "text-primary" : "text-muted-foreground"}`}>
+                {day.label}
+              </span>
             </div>
           ))}
         </div>
@@ -60,14 +79,20 @@ export function StatsRow({ done, total }: { done: number; total: number }) {
           <Clock className="h-4 w-4 text-primary" />
         </div>
         <div className="mt-3 flex items-end gap-2">
-          <span className="text-3xl font-black text-foreground">4h 36m</span>
-          <span className="pb-1 text-xs font-bold text-primary">+42m</span>
+          <span className="text-3xl font-black text-foreground">
+            {formatStudyTime(studyStats.today_seconds)}
+          </span>
         </div>
         <p className="mt-4 text-xs font-medium text-muted-foreground">
-          Mục tiêu 5h — bạn đã đạt 92%. Thêm một phiên Pomodoro là chạm mốc.
+          {studyStats.today_seconds >= studyStats.streak_goal_seconds
+            ? "Đã đạt mốc 15 phút để giữ chuỗi hôm nay."
+            : `Còn ${formatStudyTime(studyStats.streak_goal_seconds - studyStats.today_seconds)} để giữ chuỗi hôm nay.`}
         </p>
         <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
-          <div className="h-full w-[92%] rounded-full bg-primary-deep" />
+          <div
+            className="h-full rounded-full bg-primary-deep transition-all duration-500"
+            style={{ width: `${studyGoalPercent}%` }}
+          />
         </div>
       </div>
     </div>

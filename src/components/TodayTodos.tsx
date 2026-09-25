@@ -1,4 +1,5 @@
 import { Check, ListTodo, Plus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import type { Todo } from "@/data/mock";
 
@@ -22,10 +23,10 @@ export function TodayTodos({
           <ListTodo className="h-4 w-4 text-primary" />
           <h2 className="text-base font-black text-foreground">To-do hôm nay</h2>
         </div>
-        <button className="btn-press flex items-center gap-1 rounded-full border border-primary/40 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10">
+        <Link to="/todo" className="btn-press flex items-center gap-1 rounded-full border border-primary/40 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10">
           <Plus className="h-3.5 w-3.5" />
           Tạo mới
-        </button>
+        </Link>
       </div>
 
       <ul className="mt-4 space-y-2.5">

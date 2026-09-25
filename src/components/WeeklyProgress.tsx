@@ -1,10 +1,10 @@
 import { TrendingUp } from "lucide-react";
+import { formatStudyTime, type StudyStats } from "@/hooks/useStudyStats";
 
-import { weekStats } from "@/data/mock";
-
-export function WeeklyProgress() {
-  const max = Math.max(...weekStats.map((d) => d.hours), 6);
-  const total = weekStats.reduce((s, d) => s + d.hours, 0);
+export function WeeklyProgress({ studyStats }: { studyStats: StudyStats }) {
+  const week = studyStats.week;
+  const max = Math.max(...week.map((day) => day.seconds / 3600), 1);
+  const studiedCount = week.filter((day) => day.studied).length;
 
   return (
     <section className="card-soft animate-fade-up p-5" style={{ animationDelay: "80ms" }}>
@@ -12,22 +12,23 @@ export function WeeklyProgress() {
         <div>
           <h2 className="text-base font-black text-foreground">Tiến độ tuần này</h2>
           <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-            Tổng cộng {total.toFixed(1)} giờ học
+            Tổng cộng {formatStudyTime(studyStats.week_seconds)} học trong tuần
           </p>
         </div>
         <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
           <TrendingUp className="h-3.5 w-3.5" />
-          +12%
+          {studiedCount}/7 ngày
         </span>
       </div>
 
       <div className="mt-5 flex h-36 items-end gap-2">
-        {weekStats.map((d, i) => {
-          const height = d.hours === 0 ? 4 : Math.round((d.hours / max) * 100);
+        {week.map((day, i) => {
+          const hours = day.seconds / 3600;
+          const height = hours === 0 ? 4 : Math.max(5, Math.round((hours / max) * 100));
           return (
-            <div key={d.label} className="flex h-full flex-1 flex-col items-center gap-2">
+            <div key={day.date} className="flex h-full flex-1 flex-col items-center gap-2">
               <span className="text-[10px] font-bold text-muted-foreground">
-                {d.hours > 0 ? `${d.hours}h` : "--"}
+                {hours > 0 ? `${hours.toFixed(1)}h` : "--"}
               </span>
               <div className="relative w-full flex-1">
                 <div
@@ -35,19 +36,19 @@ export function WeeklyProgress() {
                   style={{
                     height: `${height}%`,
                     animationDelay: `${i * 70}ms`,
-                    backgroundColor: d.today
+                    backgroundColor: day.is_today
                       ? "var(--color-primary-deep)"
-                      : d.hours > 0
+                      : hours > 0
                         ? "var(--color-primary)"
                         : "var(--color-muted)",
-                    opacity: d.hours > 0 ? 1 : 0.6,
+                    opacity: hours > 0 ? 1 : 0.6,
                   }}
                 />
               </div>
               <span
-                className={`text-[11px] font-bold ${d.today ? "text-primary-deep" : "text-muted-foreground"}`}
+                className={`text-[11px] font-bold ${day.is_today ? "text-primary-deep" : "text-muted-foreground"}`}
               >
-                {d.label}
+                {day.label}
               </span>
             </div>
           );

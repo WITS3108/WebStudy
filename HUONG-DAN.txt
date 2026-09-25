@@ -1,0 +1,9 @@
+POMODORO + THONG KE GIO HOC
+
+Giai nen file zip vao thu muc goc cua repo WITS3108/studia-frontend.
+Giu nguyen cac thu muc src va backend; neu hoi Replace, chon Replace.
+File chinh: src/components/PomodoroPanel.tsx.
+useStudyStats.ts, StatsRow.tsx, WeeklyProgress.tsx, AppShell.tsx va routes/index.tsx ket noi dong ho voi thong ke gio hoc/chuoi hoc.
+Backend dung FastAPI/SQLite; huong dan chay nam trong backend/README.md.
+
+Khong upload .env, backend/todos.sqlite3, backend/.venv hoac node_modules.

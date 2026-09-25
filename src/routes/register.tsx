@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import { register } from '@/lib/auth';
-import { useGoogleLogin } from '@react-oauth/google';
+import { supabase } from '@/intergrations/supabase/client';
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
@@ -27,17 +27,17 @@ function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Xử lý xác thực Google khi đăng ký nhanh thành công
-  const googleRegister = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      console.log("Đăng ký/Đăng nhập Google thành công:", tokenResponse);
-      // TODO: Gửi tokenResponse.access_token lên backend để tạo tài khoản mới nếu chưa tồn tại
-      navigate({ to: '/' });
-    },
-    onError: () => {
-      setError('Đăng ký bằng Google thất bại. Vui lòng thử lại.');
-    },
-  });
+  // Đăng ký/đăng nhập Google qua Supabase OAuth
+  const handleGoogleRegister = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      setError(error.message || 'Đăng ký bằng Google thất bại. Vui lòng thử lại.');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -173,7 +173,7 @@ function RegisterPage() {
 
         <button 
           type="button" 
-          onClick={() => googleRegister()} 
+          onClick={() => void handleGoogleRegister()} 
           className="w-full mt-2 flex items-center justify-center gap-3 py-3 border border-border rounded-xl font-medium text-foreground hover:bg-card transition shadow-sm"
         >
           <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />

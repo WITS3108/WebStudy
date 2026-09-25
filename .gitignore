@@ -36,3 +36,6 @@ backend/*.db
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env

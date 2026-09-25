@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import AuthShell from '../components/AuthShell';
 import { login } from '@/lib/auth';
-import { useGoogleLogin } from '@react-oauth/google';
+import { supabase } from '@/intergrations/supabase/client';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -17,17 +17,17 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Xử lý xác thực Google khi đăng nhập thành công
-  const googleLogin = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      console.log("Đăng nhập Google thành công:", tokenResponse);
-      // TODO: Gửi tokenResponse.access_token lên backend của bạn để xác thực/đăng nhập
-      navigate({ to: '/' });
-    },
-    onError: () => {
-      setError('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
-    },
-  });
+  // Đăng nhập Google qua Supabase OAuth (tạo phiên đăng nhập thật sự)
+  const handleGoogleLogin = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      setError(error.message || 'Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +104,7 @@ function LoginPage() {
 
         <button 
           type="button" 
-          onClick={() => googleLogin()} 
+          onClick={() => void handleGoogleLogin()} 
           className="w-full mt-2 flex items-center justify-center gap-3 py-3 border border-border rounded-xl font-medium text-foreground hover:bg-card transition shadow-sm"
         >
           <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />

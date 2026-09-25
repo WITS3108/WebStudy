@@ -1,6 +1,8 @@
-import { useState, useRef, type ChangeEvent } from "react";
+import { useEffect, useState, useRef, type ChangeEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { useAuth } from "@/hooks/useAuth";
+import { updateProfile, uploadAvatar } from "@/lib/auth";
 import {
   Camera,
   Calendar,
@@ -14,6 +16,7 @@ import {
   HelpCircle,
   KeyRound,
   SlidersHorizontal,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
@@ -21,18 +24,72 @@ export const Route = createFileRoute("/settings")({
 });
 
 function SettingsPage() {
+  const { user, refresh } = useAuth();
+
   // Quản lý Tab hiện tại
   const [activeTab, setActiveTab] = useState<"profile" | "goals" | "security">("profile");
 
-  // State Hồ sơ cá nhân
+  // State Hồ sơ cá nhân (loaded from the authenticated user)
   const [avatar, setAvatar] = useState<string>("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200");
-  const [username, setUsername] = useState("minhanh.academic");
-  const [fullName, setFullName] = useState("Nguyễn Văn A");
-  const [email, setEmail] = useState("nguyenvana@gmail.com");
-  const [schoolClass, setSchoolClass] = useState("10A3 - THPT Việt Đức");
-  const [dob, setDob] = useState("2003-09-14");
-  const [gender, setGender] = useState<"Nam" | "Nữ" | "Khác">("Nữ");
-  const [personalGoal, setPersonalGoal] = useState("Đạt học sinh giỏi và duy trì thói quen học tập liên tục mỗi tuần.");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [school, setSchool] = useState("");
+  const [className, setClassName] = useState("");
+  const [dob, setDob] = useState("");
+  const [gender, setGender] = useState<"Nam" | "Nữ" | "Khác">("Nam");
+  const [personalGoal, setPersonalGoal] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Populate the form with the logged-in user's profile.
+  useEffect(() => {
+    if (!user) return;
+    setUsername(user.username ?? "");
+    setEmail(user.email ?? "");
+    setClassName(user.className ?? "");
+    setSchool(user.school ?? "");
+    setDob(user.birthDate ?? "");
+    setGender((user.gender as "Nam" | "Nữ" | "Khác") || "Nam");
+    setPersonalGoal(user.goal ?? "");
+    if (user.avatarPath) setAvatar(user.avatarPath);
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    setSaved(false);
+    setSaveError(null);
+    try {
+      let avatarPath = user?.avatarPath;
+      if (avatarFile) {
+        avatarPath = await uploadAvatar(avatarFile);
+      }
+
+      await updateProfile({
+        username,
+        email,
+        school: school.trim(),
+        className: className.trim(),
+        birthDate: dob,
+        gender,
+        goal: personalGoal,
+        avatarPath,
+      });
+
+      if (avatarPath) setAvatar(avatarPath);
+      setAvatarFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      await refresh();
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Không thể lưu thông tin.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // State Mục tiêu học tập
   const [dailyHours, setDailyHours] = useState<number>(4.0);
@@ -51,6 +108,7 @@ function SettingsPage() {
 
   // Ref Upload Avatar
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dobRef = useRef<HTMLInputElement>(null);
 
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,6 +117,7 @@ function SettingsPage() {
         URL.revokeObjectURL(avatar);
       }
       setAvatar(URL.createObjectURL(file));
+      setAvatarFile(file);
     }
   };
 
@@ -151,9 +210,9 @@ function SettingsPage() {
                   </button>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">{fullName}</h3>
+                  <h3 className="text-lg font-bold text-foreground">{username || "Người dùng"}</h3>
                   <p className="text-xs text-muted-foreground mt-1 font-medium">
-                    {schoolClass || "Chưa cập nhật Lớp - Trường"}
+                    {school || "Chưa cập nhật Trường"}
                   </p>
                 </div>
               </div>
@@ -192,18 +251,6 @@ function SettingsPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-foreground mb-2">
-                  Họ và tên đầy đủ
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-muted/30 border border-border rounded-xl px-3.5 py-2.5 text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block font-bold text-foreground">
                     Email
@@ -222,13 +269,26 @@ function SettingsPage() {
 
               <div>
                 <label className="block font-bold text-foreground mb-2">
-                  Lớp - Trường
+                  Lớp
                 </label>
                 <input
                   type="text"
-                  value={schoolClass}
-                  onChange={(e) => setSchoolClass(e.target.value)}
-                  placeholder="Ví dụ: 12A1 - THPT Việt Đức"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="Ví dụ: 12A1"
+                  className="w-full bg-muted/30 border border-border rounded-xl px-3.5 py-2.5 text-foreground font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-foreground mb-2">
+                  Trường
+                </label>
+                <input
+                  type="text"
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value)}
+                  placeholder="Ví dụ: THPT Chu Văn An"
                   className="w-full bg-muted/30 border border-border rounded-xl px-3.5 py-2.5 text-foreground font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
@@ -239,12 +299,20 @@ function SettingsPage() {
                 </label>
                 <div className="relative">
                   <input
+                    ref={dobRef}
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full bg-muted/30 border border-border rounded-xl px-3.5 py-2.5 text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="no-native-date-picker w-full bg-muted/30 border border-border rounded-xl px-3.5 py-2.5 pr-10 text-foreground font-medium focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <Calendar className="w-4 h-4 text-muted-foreground absolute right-3.5 top-2.5 pointer-events-none" />
+                  <button
+                    type="button"
+                    onClick={() => dobRef.current?.showPicker?.()}
+                    aria-label="Mở lịch chọn ngày"
+                    className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -285,9 +353,25 @@ function SettingsPage() {
               />
             </div>
 
-            <div className="flex justify-end pt-2">
-              <button className="btn-press flex items-center gap-2 bg-primary text-primary-foreground font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg">
-                <Save className="w-4 h-4" /> Lưu thay đổi
+            <div className="flex items-center justify-end gap-3 pt-2">
+              {saveError && (
+                <span className="flex items-center gap-1.5 text-xs font-bold text-destructive">
+                  <AlertTriangle className="w-3.5 h-3.5" /> {saveError}
+                </span>
+              )}
+              {saved && (
+                <span className="flex items-center gap-1.5 text-xs font-bold text-success">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Đã lưu
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={saving}
+                className="btn-press flex items-center gap-2 bg-primary text-primary-foreground font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? "Đang lưu..." : "Lưu thay đổi"}
               </button>
             </div>
           </div>

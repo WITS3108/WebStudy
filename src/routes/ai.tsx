@@ -159,7 +159,6 @@ export function AIPage() {
       }
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      // Thử model gemini-1.5-flash-002 trước, nếu chưa có thì chuyển sang gemini-1.5-flash-001
       const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
       const promptParts: any[] = [];
       if (userText) promptParts.push(userText);

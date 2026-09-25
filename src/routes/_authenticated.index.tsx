@@ -11,7 +11,7 @@ import { PomodoroPanel } from "@/components/PomodoroPanel";
 import { useTodos } from "@/hooks/useTodos";
 import { quotes } from "@/data/mock";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "LearnFast — Trang chủ học tập tập trung" },

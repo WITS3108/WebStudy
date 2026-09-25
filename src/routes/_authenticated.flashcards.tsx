@@ -18,7 +18,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 
-export const Route = createFileRoute("/flashcards")({
+export const Route = createFileRoute("/_authenticated/flashcards")({
   component: FlashcardsPage,
 });
 

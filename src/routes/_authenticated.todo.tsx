@@ -7,7 +7,7 @@ import { TodoComposer } from "@/components/TodoComposer";
 import { useTodos } from "@/hooks/useTodos";
 import type { Todo } from "@/data/mock";
 
-export const Route = createFileRoute("/todo")({
+export const Route = createFileRoute("/_authenticated/todo")({
   head: () => ({
     meta: [
       { title: "To-do list — LearnFast" },
@@ -38,7 +38,7 @@ const filters = [
 ] as const;
 
 function TodoPage() {
-  const { todos, toggle, add, remove, clearDone } = useTodos();
+  const { todos, toggle, add, remove, clearDone, error } = useTodos();
   const [filter, setFilter] = useState<(typeof filters)[number]["key"]>("all");
 
   const done = todos.filter((t) => t.done).length;
@@ -66,6 +66,12 @@ function TodoPage() {
         </header>
 
         <TodoComposer onAdd={add} />
+
+        {error && (
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm font-bold text-destructive animate-fade-up">
+            Không thể lưu nhiệm vụ: {error}
+          </div>
+        )}
 
         <section className="card-soft animate-fade-up p-5" style={{ animationDelay: "120ms" }}>
           <div className="flex flex-wrap items-center justify-between gap-3">

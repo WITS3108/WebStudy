@@ -9,38 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AiRouteImport } from './routes/ai'
-import { Route as FlashcardsRouteImport } from './routes/flashcards'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as TodoRouteImport } from './routes/todo'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedTodoRouteImport } from './routes/_authenticated.todo'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedFlashcardsRouteImport } from './routes/_authenticated.flashcards'
+import { Route as AuthenticatedAiRouteImport } from './routes/_authenticated.ai'
 
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiRoute = AiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FlashcardsRoute = FlashcardsRouteImport.update({
-  id: '/flashcards',
-  path: '/flashcards',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TodoRoute = TodoRouteImport.update({
-  id: '/todo',
-  path: '/todo',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -53,88 +33,127 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTodoRoute = AuthenticatedTodoRouteImport.update({
+  id: '/todo',
+  path: '/todo',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFlashcardsRoute = AuthenticatedFlashcardsRouteImport.update({
+  id: '/flashcards',
+  path: '/flashcards',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAiRoute = AuthenticatedAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/ai': typeof AiRoute
-  '/flashcards': typeof FlashcardsRoute
-  '/settings': typeof SettingsRoute
-  '/todo': typeof TodoRoute
-  '/login': typeof LoginRoute     
-  '/register': typeof RegisterRoute 
+  '/': typeof AuthenticatedIndexRoute
+  '/ai': typeof AuthenticatedAiRoute
+  '/flashcards': typeof AuthenticatedFlashcardsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/todo': typeof AuthenticatedTodoRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/ai': typeof AiRoute
-  '/flashcards': typeof FlashcardsRoute
-  '/settings': typeof SettingsRoute
-  '/todo': typeof TodoRoute
-  '/login': typeof LoginRoute     // <-- Bổ sung dòng này
-  '/register': typeof RegisterRoute // <-- Bổ sung dòng này
+  '/': typeof AuthenticatedIndexRoute
+  '/ai': typeof AuthenticatedAiRoute
+  '/flashcards': typeof AuthenticatedFlashcardsRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/todo': typeof AuthenticatedTodoRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/ai': typeof AiRoute
-  '/flashcards': typeof FlashcardsRoute
-  '/settings': typeof SettingsRoute
-  '/todo': typeof TodoRoute
-  '/login': typeof LoginRoute     // <-- Bổ sung dòng này
-  '/register': typeof RegisterRoute // <-- Bổ sung dòng này
+  '/_authenticated': typeof AuthenticatedRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/ai': typeof AuthenticatedAiRoute
+  '/_authenticated/flashcards': typeof AuthenticatedFlashcardsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/todo': typeof AuthenticatedTodoRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/ai' | '/flashcards' | '/settings' | '/todo' | '/login' | '/register'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/ai' | '/flashcards' | '/settings' | '/todo' | '/login' | '/register'
-  id: '__root__' | '/' | '/ai' | '/flashcards' | '/settings' | '/todo' | '/login' | '/register'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/_authenticated/'
+    | '/_authenticated/ai'
+    | '/_authenticated/flashcards'
+    | '/_authenticated/settings'
+    | '/_authenticated/todo'
+    | '/login'
+    | '/register'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AiRoute: typeof AiRoute
-  FlashcardsRoute: typeof FlashcardsRoute
-  SettingsRoute: typeof SettingsRoute
-  TodoRoute: typeof TodoRoute
-  LoginRoute: typeof LoginRoute       // <-- Bổ sung dòng này
-  RegisterRoute: typeof RegisterRoute // <-- Bổ sung dòng này
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/ai': {
-      id: '/ai'
+    '/_authenticated/ai': {
+      id: '/_authenticated/ai'
       path: '/ai'
       fullPath: '/ai'
-      preLoaderRoute: typeof AiRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedAiRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/flashcards': {
-      id: '/flashcards'
+    '/_authenticated/flashcards': {
+      id: '/_authenticated/flashcards'
       path: '/flashcards'
       fullPath: '/flashcards'
-      preLoaderRoute: typeof FlashcardsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedFlashcardsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/settings': {
-      id: '/settings'
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/todo': {
-      id: '/todo'
+    '/_authenticated/todo': {
+      id: '/_authenticated/todo'
       path: '/todo'
       fullPath: '/todo'
-      preLoaderRoute: typeof TodoRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedTodoRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/login': {
       id: '/login'
@@ -153,14 +172,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAiRoute: typeof AuthenticatedAiRoute
+  AuthenticatedFlashcardsRoute: typeof AuthenticatedFlashcardsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTodoRoute: typeof AuthenticatedTodoRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAiRoute: AuthenticatedAiRoute,
+  AuthenticatedFlashcardsRoute: AuthenticatedFlashcardsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTodoRoute: AuthenticatedTodoRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AiRoute: AiRoute,
-  FlashcardsRoute: FlashcardsRoute,
-  SettingsRoute: SettingsRoute,
-  TodoRoute: TodoRoute,
-  LoginRoute: LoginRoute,       // <-- Bổ sung dòng này
-  RegisterRoute: RegisterRoute, // <-- Bổ sung dòng này
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -321,7 +321,7 @@ function FlashcardsPage() {
                 className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90 transition"
               >
                 <Plus className="h-4 w-4" />
-                <span>+ Flashcard</span>
+                <span>Flashcard</span>
               </button>
             </div>
 

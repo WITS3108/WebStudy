@@ -36,8 +36,28 @@ interface FlashcardItem {
 interface TermRow {
   id: string;
   term: string;
-  definition: string;
+  answers: string[];
   remembered?: boolean;
+}
+
+function migrateFlashcards(cards: FlashcardItem[]): FlashcardItem[] {
+  return cards.map((card) => ({
+    ...card,
+    terms: (card.terms || []).map((term) => {
+      const t = term as TermRow & { definition?: string };
+      return {
+        id: t.id,
+        term: t.term,
+        answers:
+          Array.isArray(t.answers) && t.answers.length > 0
+            ? t.answers
+            : t.definition
+              ? [t.definition]
+              : [""],
+        remembered: t.remembered,
+      } as TermRow;
+    }),
+  }));
 }
 
 function FlashcardsPage() {
@@ -47,7 +67,7 @@ function FlashcardsPage() {
     if (typeof window !== "undefined") {
       try {
         const saved = window.localStorage.getItem("learnfast-flashcards");
-        if (saved) return JSON.parse(saved) as FlashcardItem[];
+        if (saved) return migrateFlashcards(JSON.parse(saved) as FlashcardItem[]);
       } catch {
         /* ignore */
       }
@@ -61,9 +81,9 @@ function FlashcardsPage() {
       count: 3, 
       mastered: 0,
       terms: [
-        { id: "t1", term: "Apple", definition: "Quả táo" },
-        { id: "t2", term: "Banana", definition: "Quả chuối" },
-        { id: "t3", term: "Computer", definition: "Máy tính" }
+        { id: "t1", term: "Apple", answers: ["Quả táo"] },
+        { id: "t2", term: "Banana", answers: ["Quả chuối"] },
+        { id: "t3", term: "Computer", answers: ["Máy tính"] }
       ]
     },
     { 
@@ -74,8 +94,8 @@ function FlashcardsPage() {
       count: 2, 
       mastered: 0,
       terms: [
-        { id: "i1", term: "Analyze", definition: "Phân tích" },
-        { id: "i2", term: "Significant", definition: "Đáng kể, quan trọng" }
+        { id: "i1", term: "Analyze", answers: ["Phân tích"] },
+        { id: "i2", term: "Significant", answers: ["Đáng kể, quan trọng"] }
       ]
     },
     { 
@@ -86,8 +106,8 @@ function FlashcardsPage() {
       count: 2, 
       mastered: 0,
       terms: [
-        { id: "m1", term: "(x^n)' = n.x^(n-1)", definition: "Đạo hàm hàm lũy thừa" },
-        { id: "m2", term: "∫ x^n dx = (x^(n+1))/(n+1) + C", definition: "Tích phân cơ bản" }
+        { id: "m1", term: "(x^n)' = n.x^(n-1)", answers: ["Đạo hàm hàm lũy thừa"] },
+        { id: "m2", term: "∫ x^n dx = (x^(n+1))/(n+1) + C", answers: ["Tích phân cơ bản"] }
       ]
     },
     { 
@@ -98,8 +118,8 @@ function FlashcardsPage() {
       count: 2, 
       mastered: 0,
       terms: [
-        { id: "d1", term: "Primary Key", definition: "Khóa chính (duy nhất và không null)" },
-        { id: "d2", term: "Foreign Key", definition: "Khóa ngoại liên kết bảng" }
+        { id: "d1", term: "Primary Key", answers: ["Khóa chính (duy nhất và không null)"] },
+        { id: "d2", term: "Foreign Key", answers: ["Khóa ngoại liên kết bảng"] }
       ]
     },
     ];
@@ -150,10 +170,11 @@ function FlashcardsPage() {
   const [newDescription, setNewDescription] = useState("");
   const [newCategory, setNewCategory] = useState("TIẾNG ANH");
   const [terms, setTerms] = useState<TermRow[]>([
-    { id: "1", term: "", definition: "" },
-    { id: "2", term: "", definition: "" },
+    { id: "1", term: "", answers: [""] },
+    { id: "2", term: "", answers: [""] },
   ]);
   const [addQuantity, setAddQuantity] = useState<number>(1);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -180,8 +201,7 @@ function FlashcardsPage() {
     if (!term) return;
 
     const userAnswer = answerInput.trim().toLowerCase();
-    const correctAnswer = term.definition.trim().toLowerCase();
-    const isCorrect = userAnswer === correctAnswer;
+    const isCorrect = term.answers.some((a) => a.trim().toLowerCase() === userAnswer);
 
     setLastCorrect(isCorrect);
     setRevealed(true);
@@ -227,7 +247,7 @@ function FlashcardsPage() {
     const newRows: TermRow[] = Array.from({ length: rowsToAdd }, (_, index) => ({
       id: (Date.now() + index).toString(),
       term: "",
-      definition: ""
+      answers: [""]
     }));
     setTerms([...terms, ...newRows]);
   };
@@ -237,15 +257,38 @@ function FlashcardsPage() {
     setTerms(terms.filter(t => t.id !== id));
   };
 
+  const handleTermChange = (id: string, value: string) => {
+    setTerms(terms.map(t => t.id === id ? { ...t, term: value } : t));
+  };
+
+  const handleAnswerChange = (id: string, index: number, value: string) => {
+    setTerms(terms.map(t => t.id === id ? {
+      ...t,
+      answers: t.answers.map((a, i) => i === index ? value : a)
+    } : t));
+  };
+
+  const handleAddAnswer = (id: string) => {
+    setTerms(terms.map(t => t.id === id ? { ...t, answers: [...t.answers, ""] } : t));
+  };
+
+  const handleRemoveAnswer = (id: string, index: number) => {
+    setTerms(terms.map(t => t.id === id ? {
+      ...t,
+      answers: t.answers.length > 1 ? t.answers.filter((_, i) => i !== index) : t.answers
+    } : t));
+  };
+
   const handleOpenCreate = () => {
     setEditingCardId(null);
     setNewTitle("");
     setNewDescription("");
     setNewCategory("TIẾNG ANH");
     setTerms([
-      { id: "1", term: "", definition: "" },
-      { id: "2", term: "", definition: "" },
+      { id: "1", term: "", answers: [""] },
+      { id: "2", term: "", answers: [""] },
     ]);
+    setSaveError(null);
     setCurrentView("create-flashcard");
   };
 
@@ -254,25 +297,59 @@ function FlashcardsPage() {
     setNewTitle(card.title);
     setNewDescription(card.description || "");
     setNewCategory(card.category);
-    setTerms(card.terms && card.terms.length > 0 ? card.terms : [
-      { id: "1", term: "", definition: "" },
-      { id: "2", term: "", definition: "" },
-    ]);
+    setTerms(card.terms && card.terms.length > 0
+      ? card.terms.map((t) => ({
+          ...t,
+          answers: t.answers && t.answers.length > 0 ? t.answers : [""],
+        }))
+      : [
+          { id: "1", term: "", answers: [""] },
+          { id: "2", term: "", answers: [""] },
+        ]);
+    setSaveError(null);
     setCurrentView("edit-flashcard");
     setActiveMenuId(null);
   };
 
   const handleSaveFlashcard = () => {
-    if (!newTitle.trim()) return;
-    
+    if (!newTitle.trim()) {
+      setSaveError("Vui lòng nhập tên bộ Flashcard.");
+      return;
+    }
+
+    // Mỗi câu hỏi phải có ít nhất một đáp án tương ứng
+    const hasIncomplete = terms.some((t) => {
+      const hasTerm = t.term.trim() !== "";
+      const hasAnswer = t.answers.some((a) => a.trim() !== "");
+      return (hasTerm && !hasAnswer) || (!hasTerm && hasAnswer);
+    });
+
+    if (hasIncomplete) {
+      setSaveError("Mỗi câu hỏi phải có ít nhất một đáp án tương ứng.");
+      return;
+    }
+
+    const cleaned: TermRow[] = terms
+      .map((t) => ({
+        ...t,
+        term: t.term.trim(),
+        answers: t.answers.map((a) => a.trim()).filter(Boolean),
+      }))
+      .filter((t) => t.term !== "" && t.answers.length > 0);
+
+    if (cleaned.length === 0) {
+      setSaveError("Vui lòng thêm ít nhất một câu hỏi và đáp án.");
+      return;
+    }
+
     if (editingCardId) {
       setFlashcards(flashcards.map(c => c.id === editingCardId ? {
         ...c,
         title: newTitle,
         description: newDescription,
         category: newCategory.toUpperCase(),
-        count: terms.length,
-        terms: terms
+        count: cleaned.length,
+        terms: cleaned
       } : c));
     } else {
       const newCard: FlashcardItem = {
@@ -280,13 +357,14 @@ function FlashcardsPage() {
         title: newTitle,
         description: newDescription,
         category: newCategory.toUpperCase(),
-        count: terms.length,
+        count: cleaned.length,
         mastered: 0,
-        terms: terms
+        terms: cleaned
       };
       setFlashcards([newCard, ...flashcards]);
     }
 
+    setSaveError(null);
     setCurrentView("main");
   };
 
@@ -476,12 +554,21 @@ function FlashcardsPage() {
                           )}
                         </div>
                       </div>
-                      <button 
-                        onClick={() => handleStartStudy(card)}
-                        className="w-full rounded-xl bg-primary/10 py-3 text-xs font-bold text-primary hover:bg-primary hover:text-white transition"
-                      >
-                        {isCompleted ? "Ôn tập lại" : "Ôn tập ngay"}
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleOpenEdit(card)}
+                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-3 text-xs font-bold text-foreground hover:bg-accent transition"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          Chỉnh
+                        </button>
+                        <button 
+                          onClick={() => handleStartStudy(card)}
+                          className="flex-1 rounded-xl bg-primary/10 py-3 text-xs font-bold text-primary hover:bg-primary hover:text-white transition"
+                        >
+                          {isCompleted ? "Ôn tập lại" : "Ôn tập ngay"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -569,7 +656,7 @@ function FlashcardsPage() {
                   }`}>
                     {lastCorrect
                       ? "✅ Đã thuộc!"
-                      : `❌ Chưa thuộc — Đáp án đúng: ${activeStudyCard.terms[currentTermIndex]?.definition}`}
+                      : `❌ Chưa thuộc — Đáp án đúng: ${(activeStudyCard.terms[currentTermIndex]?.answers || []).join(", ")}`}
                   </div>
                 )}
               </div>
@@ -661,6 +748,12 @@ function FlashcardsPage() {
               </button>
             </div>
 
+            {saveError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-600">
+                {saveError}
+              </div>
+            )}
+
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tên bộ Flashcard</label>
@@ -689,46 +782,59 @@ function FlashcardsPage() {
               <h3 className="text-lg font-bold text-foreground">Danh sách thuật ngữ (Terms)</h3>
               
               {terms.map((item, index) => (
-                <div key={item.id} className="relative rounded-2xl border border-border bg-card p-5 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                  <div className="absolute top-3 left-4 text-xs font-bold text-muted-foreground">
-                    #{index + 1}
-                  </div>
-
-                  <div className="space-y-1.5 pt-3 md:col-span-5">
-                    <label className="text-xs font-bold text-muted-foreground">Thuật ngữ (Term)</label>
-                    <input
-                      type="text"
-                      placeholder="Nhập thuật ngữ..."
-                      value={item.term}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTerms(terms.map(t => t.id === item.id ? { ...t, term: val } : t));
-                      }}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 pt-3 md:col-span-6">
-                    <label className="text-xs font-bold text-muted-foreground">Định nghĩa (Definition)</label>
-                    <input
-                      type="text"
-                      placeholder="Nhập định nghĩa..."
-                      value={item.definition}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTerms(terms.map(t => t.id === item.id ? { ...t, definition: val } : t));
-                      }}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-
-                  <div className="md:col-span-1 flex justify-end md:justify-center pb-0.5">
+                <div key={item.id} className="relative rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-muted-foreground">#{index + 1}</span>
                     <button 
                       onClick={() => handleDeleteTerm(item.id)}
-                      className="p-2.5 rounded-xl border border-border bg-background text-muted-foreground hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors"
-                      title="Xóa thuật ngữ này"
+                      disabled={terms.length === 1}
+                      className="p-2 rounded-lg border border-border text-muted-foreground hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Xóa thẻ này"
                     >
                       <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground">Câu hỏi (Question)</label>
+                    <input
+                      type="text"
+                      placeholder="Nhập câu hỏi..."
+                      value={item.term}
+                      onChange={(e) => handleTermChange(item.id, e.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-muted-foreground">Đáp án (Answers)</label>
+                    {item.answers.map((answer, ai) => (
+                      <div key={ai} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder={`Đáp án ${ai + 1}`}
+                          value={answer}
+                          onChange={(e) => handleAnswerChange(item.id, ai, e.target.value)}
+                          className="flex-1 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAnswer(item.id, ai)}
+                          disabled={item.answers.length === 1}
+                          className="p-2 rounded-lg border border-border text-muted-foreground hover:text-red-600 hover:bg-red-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                          title="Xóa đáp án này"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => handleAddAnswer(item.id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-primary/40 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/5 transition"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Thêm đáp án
                     </button>
                   </div>
                 </div>

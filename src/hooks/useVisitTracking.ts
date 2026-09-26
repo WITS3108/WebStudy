@@ -51,6 +51,25 @@ export function getVisitRecord(): VisitRecord {
 }
 
 /**
+ * Số ngày truy cập liên tiếp (day streak), tính cả hôm nay vì người dùng đang
+ * truy cập ngay bây giờ.
+ */
+export function getVisitStreak(): number {
+  const record = loadRecord();
+  const days = new Set(record.visitedDays);
+  days.add(localDateString(new Date()));
+
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    if (days.has(localDateString(d))) streak++;
+    else break;
+  }
+  return streak;
+}
+
+/**
  * Saves the user's visit date(s) and keeps updating the total time the user
  * has spent on the site. Mount once at the app root.
  */

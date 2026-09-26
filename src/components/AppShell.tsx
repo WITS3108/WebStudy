@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Brain, Flame, GraduationCap, Home, Layers, ListTodo, Search, Settings } from "lucide-react";
 
 import { ThemeToggle } from "./ThemeToggle";
-import { useStudyStats } from "@/hooks/useStudyStats";
+import { getVisitStreak } from "@/hooks/useVisitTracking";
 
 const navItems = [
   { to: "/", label: "Trang chủ", icon: Home },
@@ -15,7 +15,6 @@ const navItems = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { stats: studyStats } = useStudyStats();
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="mt-2 rounded-2xl bg-primary/10 p-3">
             <div className="flex items-center gap-2 text-primary">
               <Flame className="h-4 w-4 animate-pulse" />
-              <span className="text-sm font-black">{studyStats.streak_days}</span>
+              <span className="text-sm font-black">{getVisitStreak()}</span>
               <span className="hidden text-xs font-bold xl:inline">ngày liên tục</span>
             </div>
           </div>

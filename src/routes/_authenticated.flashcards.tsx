@@ -18,6 +18,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { useFlashcards, type FlashcardItem, type TermRow } from "@/lib/flashcards";
+import { getVisitStreak } from "@/hooks/useVisitTracking";
 
 export const Route = createFileRoute("/_authenticated/flashcards")({
   component: FlashcardsPage,
@@ -336,7 +337,7 @@ function FlashcardsPage() {
 
               <div className="flex items-center gap-2 rounded-2xl bg-orange-50 px-4 py-3 border border-orange-100 text-orange-600 font-bold text-sm shadow-sm">
                 <Flame className="h-5 w-5 fill-orange-500 text-orange-500" />
-                <span>12 ngày liên tục</span>
+                <span>{getVisitStreak()} ngày liên tục</span>
               </div>
             </div>
 

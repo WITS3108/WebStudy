@@ -1,5 +1,6 @@
 import { CheckCircle2, Clock, Flame } from "lucide-react";
 import { formatStudyTime, type StudyStats } from "@/hooks/useStudyStats";
+import { getVisitStreak } from "@/hooks/useVisitTracking";
 
 export function StatsRow({
   done,
@@ -53,7 +54,7 @@ export function StatsRow({
           <Flame className="h-4 w-4 text-primary" />
         </div>
         <div className="mt-3 flex items-end gap-2">
-          <span className="text-3xl font-black text-foreground">{studyStats.streak_days}</span>
+          <span className="text-3xl font-black text-foreground">{getVisitStreak()}</span>
           <span className="pb-1 text-xs font-bold text-muted-foreground">ngày liên tục</span>
         </div>
         <div className="mt-4 flex gap-1.5">

@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { useVisitTracking } from "@/hooks/useVisitTracking";
 
 function NotFoundComponent() {
   return (
@@ -76,6 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useVisitTracking();
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -9,6 +9,7 @@ import { FlashcardDecks } from "@/components/FlashcardDecks";
 import { TodayTodos } from "@/components/TodayTodos";
 import { PomodoroPanel } from "@/components/PomodoroPanel";
 import { useTodos } from "@/hooks/useTodos";
+import { useStudyStats } from "@/hooks/useStudyStats";
 import { quotes } from "@/data/mock";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function HomePage() {
   const { todos, toggle } = useTodos();
+  const { stats: studyStats, recordStudyTime } = useStudyStats();
   const done = todos.filter((t) => t.done).length;
   const quote = useMemo(() => quotes[new Date().getDay() % quotes.length], []);
 
@@ -61,15 +63,15 @@ function HomePage() {
               </p>
             </header>
 
-            <StatsRow done={done} total={todos.length} />
+            <StatsRow done={done} total={todos.length} studyStats={studyStats} />
             <FlashcardDecks />
             <TodayTodos todos={todos} onToggle={toggle} />
           </div>
 
           {/* Right column: weekly progress on top of pomodoro */}
           <div className="space-y-5 xl:sticky xl:top-24 xl:h-fit">
-            <WeeklyProgress />
-            <PomodoroPanel />
+            <WeeklyProgress studyStats={studyStats} />
+            <PomodoroPanel onStudyTimeRecorded={recordStudyTime} />
           </div>
         </div>
       </div>

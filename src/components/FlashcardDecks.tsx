@@ -1,4 +1,5 @@
-import { Layers, Play } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Layers, Play, ChevronRight } from "lucide-react";
 
 import { decks } from "@/data/mock";
 
@@ -10,17 +11,27 @@ export function FlashcardDecks() {
           <Layers className="h-4 w-4 text-primary" />
           <h2 className="text-base font-black text-foreground">Bộ flashcard đang ôn tập</h2>
         </div>
-        <span className="text-xs font-bold text-muted-foreground">
-          {decks.reduce((s, d) => s + d.due, 0)} thẻ đến hạn
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-bold text-muted-foreground">
+            {decks.reduce((s, d) => s + d.due, 0)} thẻ đến hạn
+          </span>
+          <Link
+            to="/flashcards"
+            className="btn-press flex items-center gap-0.5 rounded-full text-xs font-bold text-primary hover:underline"
+          >
+            Xem tất cả
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 lg:grid-cols-3">
         {decks.map((deck, i) => {
           const percent = Math.round((deck.mastered / deck.total) * 100);
           return (
-            <article
+            <Link
               key={deck.id}
+              to="/flashcards"
               className="animate-fade-up group flex h-full flex-col rounded-2xl border border-border bg-background p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/50"
               style={{ animationDelay: `${340 + i * 70}ms` }}
             >
@@ -39,11 +50,11 @@ export function FlashcardDecks() {
                   style={{ width: `${percent}%` }}
                 />
               </div>
-              <button className="btn-press mt-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-deep">
+              <span className="btn-press mt-4 flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-deep">
                 <Play className="h-3.5 w-3.5" />
                 Ôn ngay
-              </button>
-            </article>
+              </span>
+            </Link>
           );
         })}
       </div>

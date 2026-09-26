@@ -37,12 +37,22 @@ interface TermRow {
   id: string;
   term: string;
   definition: string;
+  remembered?: boolean;
 }
 
 function FlashcardsPage() {
   const [currentView, setCurrentView] = useState<"main" | "create-flashcard" | "edit-flashcard" | "study">("main");
   
-  const [flashcards, setFlashcards] = useState<FlashcardItem[]>([
+  const [flashcards, setFlashcards] = useState<FlashcardItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.localStorage.getItem("learnfast-flashcards");
+        if (saved) return JSON.parse(saved) as FlashcardItem[];
+      } catch {
+        /* ignore */
+      }
+    }
+    return [
     { 
       id: "1", 
       title: "English", 
@@ -92,7 +102,19 @@ function FlashcardsPage() {
         { id: "d2", term: "Foreign Key", definition: "Khóa ngoại liên kết bảng" }
       ]
     },
-  ]);
+    ];
+  });
+
+  // Lưu trạng thái flashcard (bao gồm "Đã thuộc" của từng thẻ) vào localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("learnfast-flashcards", JSON.stringify(flashcards));
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [flashcards]);
 
   // Kiểm tra và reset sau 24h kể từ lần ôn tập cuối
   useEffect(() => {
@@ -116,7 +138,6 @@ function FlashcardsPage() {
   const [activeStudyCard, setActiveStudyCard] = useState<FlashcardItem | null>(null);
   const [currentTermIndex, setCurrentTermIndex] = useState(0);
   const [answerInput, setAnswerInput] = useState("");
-  const [rememberedIds, setRememberedIds] = useState<Set<string>>(new Set());
   const [revealed, setRevealed] = useState(false);
   const [lastCorrect, setLastCorrect] = useState(false);
 
@@ -148,7 +169,6 @@ function FlashcardsPage() {
     setActiveStudyCard(card);
     setCurrentTermIndex(0);
     setAnswerInput("");
-    setRememberedIds(new Set());
     setRevealed(false);
     setLastCorrect(false);
     setCurrentView("study");
@@ -165,25 +185,38 @@ function FlashcardsPage() {
 
     setLastCorrect(isCorrect);
     setRevealed(true);
-    setRememberedIds((prev) => {
-      const next = new Set(prev);
-      if (isCorrect) next.add(term.id);
-      else next.delete(term.id);
-      return next;
-    });
+
+    // Lưu trạng thái "Đã thuộc" cho từng thẻ
+    setActiveStudyCard((prev) =>
+      prev
+        ? {
+            ...prev,
+            terms: prev.terms.map((t) =>
+              t.id === term.id ? { ...t, remembered: isCorrect } : t,
+            ),
+          }
+        : prev,
+    );
   };
 
   const handleFinishStudy = () => {
     if (!activeStudyCard) return;
     const now = Date.now();
-    const rememberedCount = rememberedIds.size;
+    const rememberedCount = activeStudyCard.terms.filter((t) => t.remembered).length;
 
-    // Cập nhật số thẻ đã thuộc cho bộ flashcard tương ứng
-    setFlashcards(flashcards.map(c => c.id === activeStudyCard.id ? {
-      ...c,
-      mastered: rememberedCount,
-      lastStudiedAt: now
-    } : c));
+    // Lưu trạng thái "Đã thuộc" của từng thẻ và cập nhật số thẻ đã thuộc
+    setFlashcards((prev) =>
+      prev.map((c) =>
+        c.id === activeStudyCard.id
+          ? {
+              ...c,
+              terms: activeStudyCard.terms,
+              mastered: rememberedCount,
+              lastStudiedAt: now,
+            }
+          : c,
+      ),
+    );
 
     setCurrentView("main");
     setActiveStudyCard(null);
@@ -301,7 +334,6 @@ function FlashcardsPage() {
     setAnswerInput("");
     setRevealed(false);
     setLastCorrect(false);
-    setRememberedIds(new Set());
   };
 
   const isLastCard = activeStudyCard && activeStudyCard.terms.length > 0 && currentTermIndex === activeStudyCard.terms.length - 1;
@@ -571,7 +603,7 @@ function FlashcardsPage() {
                   </button>
 
                   <span className="text-sm font-bold text-muted-foreground">
-                    {currentTermIndex + 1} / {activeStudyCard.terms.length || 1} · Đã thuộc {rememberedIds.size}
+                    {currentTermIndex + 1} / {activeStudyCard.terms.length || 1} · Đã thuộc {activeStudyCard.terms.filter((t) => t.remembered).length}
                   </span>
 
                   {isLastCard ? (

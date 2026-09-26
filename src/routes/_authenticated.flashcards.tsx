@@ -115,7 +115,10 @@ function FlashcardsPage() {
 
   const [activeStudyCard, setActiveStudyCard] = useState<FlashcardItem | null>(null);
   const [currentTermIndex, setCurrentTermIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [answerInput, setAnswerInput] = useState("");
+  const [rememberedIds, setRememberedIds] = useState<Set<string>>(new Set());
+  const [revealed, setRevealed] = useState(false);
+  const [lastCorrect, setLastCorrect] = useState(false);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -144,19 +147,41 @@ function FlashcardsPage() {
   const handleStartStudy = (card: FlashcardItem) => {
     setActiveStudyCard(card);
     setCurrentTermIndex(0);
-    setIsFlipped(false);
+    setAnswerInput("");
+    setRememberedIds(new Set());
+    setRevealed(false);
+    setLastCorrect(false);
     setCurrentView("study");
+  };
+
+  const handleCheckAnswer = () => {
+    if (!activeStudyCard || revealed) return;
+    const term = activeStudyCard.terms[currentTermIndex];
+    if (!term) return;
+
+    const userAnswer = answerInput.trim().toLowerCase();
+    const correctAnswer = term.definition.trim().toLowerCase();
+    const isCorrect = userAnswer === correctAnswer;
+
+    setLastCorrect(isCorrect);
+    setRevealed(true);
+    setRememberedIds((prev) => {
+      const next = new Set(prev);
+      if (isCorrect) next.add(term.id);
+      else next.delete(term.id);
+      return next;
+    });
   };
 
   const handleFinishStudy = () => {
     if (!activeStudyCard) return;
     const now = Date.now();
-    const totalCount = activeStudyCard.terms.length;
+    const rememberedCount = rememberedIds.size;
 
-    // Cập nhật trạng thái đã học xong cho bộ flashcard tương ứng
+    // Cập nhật số thẻ đã thuộc cho bộ flashcard tương ứng
     setFlashcards(flashcards.map(c => c.id === activeStudyCard.id ? {
       ...c,
-      mastered: totalCount,
+      mastered: rememberedCount,
       lastStudiedAt: now
     } : c));
 
@@ -273,7 +298,10 @@ function FlashcardsPage() {
       terms: shuffledTerms
     });
     setCurrentTermIndex(0);
-    setIsFlipped(false);
+    setAnswerInput("");
+    setRevealed(false);
+    setLastCorrect(false);
+    setRememberedIds(new Set());
   };
 
   const isLastCard = activeStudyCard && activeStudyCard.terms.length > 0 && currentTermIndex === activeStudyCard.terms.length - 1;
@@ -471,74 +499,108 @@ function FlashcardsPage() {
             </div>
 
             <div className="space-y-6">
-              <div 
-                onClick={() => setIsFlipped(!isFlipped)}
-                className="w-full h-80 sm:h-96 rounded-3xl border-2 border-border bg-card p-8 shadow-md flex flex-col items-center justify-center text-center cursor-pointer select-none transition-all duration-300 hover:border-primary/50 relative group"
-              >
+              {/* Thẻ thuật ngữ (mặt trước) */}
+              <div className="w-full h-64 sm:h-72 rounded-3xl border-2 border-border bg-card p-8 shadow-md flex flex-col items-center justify-center text-center transition-all duration-300 relative">
                 <div className="absolute top-5 left-6 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {isFlipped ? "Định nghĩa (Mặt sau)" : "Thuật ngữ (Mặt trước)"}
+                  Thuật ngữ
                 </div>
-
-                <div className="absolute top-5 right-6 text-xs text-muted-foreground font-medium group-hover:text-primary transition">
-                  {isFlipped ? "Nhấn để xem Thuật ngữ" : "Nhấn để lật xem Định nghĩa"}
-                </div>
-
                 <div className="my-auto px-4">
                   <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground leading-snug">
-                    {activeStudyCard.terms.length > 0 
-                      ? (isFlipped ? activeStudyCard.terms[currentTermIndex]?.definition : activeStudyCard.terms[currentTermIndex]?.term)
+                    {activeStudyCard.terms.length > 0
+                      ? activeStudyCard.terms[currentTermIndex]?.term
                       : "Bộ thẻ này chưa có thuật ngữ nào."}
                   </h2>
                 </div>
-
-                <div className="absolute bottom-5 text-xs font-semibold text-muted-foreground">
-                  Bấm vào thẻ bất kỳ đâu để lật mặt
-                </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <button 
-                  onClick={() => {
-                    if (currentTermIndex > 0) {
-                      setCurrentTermIndex(currentTermIndex - 1);
-                      setIsFlipped(false);
+              {/* Ô nhập câu trả lời */}
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={answerInput}
+                  onChange={(e) => setAnswerInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !revealed && answerInput.trim()) {
+                      void handleCheckAnswer();
                     }
                   }}
-                  disabled={currentTermIndex === 0}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl border border-border bg-card text-sm font-bold text-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:bg-accent transition shadow-sm"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span>Trước</span>
-                </button>
+                  placeholder="Nhập câu trả lời của bạn..."
+                  disabled={revealed}
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+                />
 
-                <span className="text-sm font-bold text-muted-foreground">
-                  {currentTermIndex + 1} / {activeStudyCard.terms.length || 1}
-                </span>
-
-                {isLastCard ? (
-                  <button 
-                    onClick={handleFinishStudy}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 text-sm font-bold text-white hover:opacity-90 transition shadow-sm"
-                  >
-                    <span>Hoàn tất</span>
-                    <CheckCircle2 className="h-4 w-4" />
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => {
-                      if (activeStudyCard.terms && currentTermIndex < activeStudyCard.terms.length - 1) {
-                        setCurrentTermIndex(currentTermIndex + 1);
-                        setIsFlipped(false);
-                      }
-                    }}
-                    disabled={!activeStudyCard.terms || currentTermIndex >= activeStudyCard.terms.length - 1}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-sm font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition shadow-sm"
-                  >
-                    <span>Tiếp theo</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                {revealed && (
+                  <div className={`rounded-xl border p-4 text-sm font-bold ${
+                    lastCorrect
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}>
+                    {lastCorrect
+                      ? "✅ Đã thuộc!"
+                      : `❌ Chưa thuộc — Đáp án đúng: ${activeStudyCard.terms[currentTermIndex]?.definition}`}
+                  </div>
                 )}
               </div>
+
+              {/* Kiểm tra / điều hướng */}
+              {!revealed ? (
+                <button
+                  onClick={() => void handleCheckAnswer()}
+                  disabled={!answerInput.trim()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Check className="h-4 w-4" />
+                  <span>Kiểm tra</span>
+                </button>
+              ) : (
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    onClick={() => {
+                      if (currentTermIndex > 0) {
+                        setCurrentTermIndex(currentTermIndex - 1);
+                        setAnswerInput("");
+                        setRevealed(false);
+                        setLastCorrect(false);
+                      }
+                    }}
+                    disabled={currentTermIndex === 0}
+                    className="flex items-center gap-2 rounded-xl border border-border bg-card px-6 py-3 text-sm font-bold text-foreground transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span>Trước</span>
+                  </button>
+
+                  <span className="text-sm font-bold text-muted-foreground">
+                    {currentTermIndex + 1} / {activeStudyCard.terms.length || 1} · Đã thuộc {rememberedIds.size}
+                  </span>
+
+                  {isLastCard ? (
+                    <button
+                      onClick={handleFinishStudy}
+                      className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
+                    >
+                      <span>Hoàn tất</span>
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        if (activeStudyCard.terms && currentTermIndex < activeStudyCard.terms.length - 1) {
+                          setCurrentTermIndex(currentTermIndex + 1);
+                          setAnswerInput("");
+                          setRevealed(false);
+                          setLastCorrect(false);
+                        }
+                      }}
+                      disabled={!activeStudyCard.terms || currentTermIndex >= activeStudyCard.terms.length - 1}
+                      className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <span>Tiếp theo</span>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
